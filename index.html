@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LUCIDA — Tropical Reef</title>
+  <meta name="description" content="A scroll-driven swim through a sunlit tropical reef." />
+  <meta name="theme-color" content="#7fd4e4" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink: #08343c; --gold: #8a5a28; --water: #7fd4e4; --cream: #f4ead4; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--water); color: var(--ink); }
+    body { overflow-x: hidden; }
+    canvas.lucida-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      display: block; z-index: 0; touch-action: pan-y;
+    }
+    .lucida-scroll { height: 920vh; position: relative; z-index: 1; pointer-events: none; }
+    .lucida-hud {
+      position: fixed; inset: 0; z-index: 2; pointer-events: none;
+      font-family: Outfit, system-ui, sans-serif; color: var(--ink);
+    }
+    .lucida-frame { position: absolute; inset: 14px; border: 1px solid rgba(8,52,60,0.16); }
+    .lucida-top {
+      position: absolute; top: 22px; left: 28px; right: 28px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      letter-spacing: 0.28em; text-transform: uppercase; font-size: 11px; font-weight: 500;
+    }
+    .lucida-brand { color: var(--gold); }
+    .lucida-depth { text-align: right; }
+    .lucida-depth strong {
+      display: block; margin-top: 2px;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: 28px; font-weight: 500; letter-spacing: 0.06em;
+      text-transform: none; color: var(--ink);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+    }
+    .lucida-copy {
+      position: absolute; left: 50%; width: min(760px, calc(100% - 40px));
+      transform: translateX(-50%); text-align: center;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.28);
+      transition: opacity 0.6s ease;
+    }
+    .lucida-copy h1 {
+      font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500;
+      letter-spacing: 0.2em; font-size: clamp(56px, 10vw, 104px); line-height: 0.9;
+    }
+    .lucida-copy .sub {
+      margin-top: 16px; letter-spacing: 0.38em; text-transform: uppercase;
+      font-size: 12px; color: var(--gold); font-weight: 300;
+    }
+    .lucida-copy .hint {
+      margin-top: 36px; letter-spacing: 0.28em; text-transform: uppercase;
+      font-size: 12px; color: rgba(8,52,60,0.72); font-weight: 300;
+      animation: lucida-pulse 2.8s ease-in-out infinite;
+    }
+    .lucida-copy h2 {
+      font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500;
+      font-size: clamp(28px, 4vw, 42px); letter-spacing: 0.08em;
+    }
+    .lucida-copy p {
+      margin-top: 10px; font-size: 14px; letter-spacing: 0.04em;
+      color: rgba(8,52,60,0.8); font-weight: 300;
+    }
+    .lucida-hero { top: 30%; }
+    .lucida-cap { top: 18%; }
+    .lucida-drift, .lucida-download {
+      pointer-events: auto;
+      border: 1px solid rgba(8,52,60,0.28);
+      background: rgba(255,252,245,0.42);
+      color: var(--ink);
+      font-family: Outfit, system-ui, sans-serif;
+      font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+      padding: 10px 16px; border-radius: 999px;
+      backdrop-filter: blur(8px); cursor: pointer;
+    }
+    .lucida-drift { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); }
+    .lucida-drift[aria-pressed="true"] { background: rgba(8,52,60,0.78); color: var(--cream); }
+    .lucida-download {
+      position: absolute; right: 28px; bottom: 28px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .lucida-download svg { width: 14px; height: 14px; }
+    .lucida-download.busy { opacity: 0.55; pointer-events: none; }
+    .lucida-loader, .lucida-fallback {
+      position: fixed; inset: 0; z-index: 5; display: grid; place-items: center;
+      background: linear-gradient(180deg, #b7ebf4 0%, #7fd4e4 45%, #e7d7b4 100%);
+      text-align: center; padding: 24px;
+    }
+    .lucida-loader h2, .lucida-fallback h2 {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      letter-spacing: 0.42em; font-weight: 500; font-size: 22px;
+    }
+    .lucida-loader .bar {
+      width: 140px; height: 1px; margin: 18px auto 0;
+      background: rgba(8,52,60,0.15); overflow: hidden;
+    }
+    .lucida-loader .bar span {
+      display: block; height: 100%; width: 40%; background: var(--gold);
+      animation: lucida-load 1.1s ease-in-out infinite;
+    }
+    .lucida-fallback { display: none; }
+    .lucida-fallback p {
+      max-width: 360px; margin-top: 12px; font-family: Outfit, system-ui, sans-serif;
+      font-size: 14px; line-height: 1.5;
+    }
+    .hidden { display: none !important; }
+    @keyframes lucida-pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
+    @keyframes lucida-load { 0%{transform:translateX(-120%)} 100%{transform:translateX(320%)} }
+    @media (max-width: 640px) {
+      .lucida-frame { inset: 8px; }
+      .lucida-top { left: 16px; right: 16px; top: 16px; }
+      .lucida-copy h1 { letter-spacing: 0.12em; }
+      .lucida-download { right: 16px; bottom: 22px; }
+      .lucida-drift { bottom: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .lucida-copy .hint { animation: none; }
+      .lucida-loader .bar span { animation: none; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="lucida-canvas" id="gl" aria-label="Tropical reef"></canvas>
+  <div class="lucida-scroll" aria-hidden="true"></div>
+  <div class="lucida-hud">
+    <div class="lucida-frame"></div>
+    <div class="lucida-top">
+      <div class="lucida-brand">Lucida</div>
+      <div class="lucida-depth">Depth<strong id="depth">004 m</strong></div>
+    </div>
+    <section class="lucida-copy lucida-hero" id="hero">
+      <h1>LUCIDA</h1>
+      <p class="sub">The water holds its light</p>
+      <p class="hint" id="hint">Scroll to enter</p>
+    </section>
+    <section class="lucida-copy lucida-cap" id="capA" style="opacity:0">
+      <h2>A channel opens</h2>
+      <p>Coral on both sides, sand under the light.</p>
+    </section>
+    <section class="lucida-copy lucida-cap" id="capB" style="opacity:0">
+      <h2>Light between the fans</h2>
+      <p>The school parts, then closes again.</p>
+    </section>
+    <section class="lucida-copy lucida-cap" id="capC" style="opacity:0">
+      <h2>The reef keeps going</h2>
+      <p>Sand ribbons, coral islands, open blue.</p>
+    </section>
+    <button type="button" class="lucida-drift" id="drift" aria-pressed="false">Drift</button>
+    <button type="button" class="lucida-download" id="download" aria-label="Download current frame">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M12 4v11" /><path d="M7.5 11.5 12 16l4.5-4.5" /><path d="M5 19h14" />
+      </svg>
+      Save frame
+    </button>
+  </div>
+  <div class="lucida-loader" id="loader" role="status">
+    <div><h2>LUCIDA</h2><div class="bar"><span></span></div></div>
+  </div>
+  <div class="lucida-fallback" id="fallback" role="alert">
+    <div><h2>LUCIDA</h2><p id="error">This browser could not start the reef.</p></div>
+  </div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.186.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.186.1/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    const canvas = document.getElementById("gl");
+    const loader = document.getElementById("loader");
+    const fallback = document.getElementById("fallback");
+    const errorEl = document.getElementById("error");
+    const driftBtn = document.getElementById("drift");
+    const downloadBtn = document.getElementById("download");
+    const hint = document.getElementById("hint");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) hint.textContent = "Drift to move gently";
+
+    function fail(message) {
+      errorEl.textContent = message;
+      loader.classList.add("hidden");
+      fallback.style.display = "grid";
+    }
+
+    const watchdog = setTimeout(() => {
+      if (!loader.classList.contains("hidden")) {
+        fail("The reef is taking too long. Reload, or use a browser with WebGL.");
+      }
+    }, 12000);
+
+    let handle = null;
+    try {
+      const { mountReef } = await import("./js/reef.js");
+      handle = mountReef(canvas, {
+        depth: document.getElementById("depth"),
+        hero: document.getElementById("hero"),
+        capA: document.getElementById("capA"),
+        capB: document.getElementById("capB"),
+        capC: document.getElementById("capC"),
+        reduced,
+        onReady() {
+          clearTimeout(watchdog);
+          loader.classList.add("hidden");
+        },
+        onFail(message) {
+          clearTimeout(watchdog);
+          fail(message);
+        },
+        bindDrift(set) {
+          driftBtn.addEventListener("click", () => {
+            const next = driftBtn.getAttribute("aria-pressed") !== "true";
+            driftBtn.setAttribute("aria-pressed", String(next));
+            driftBtn.textContent = next ? "Pause drift" : "Drift";
+            set(next);
+          });
+        },
+        onDriftChange(on) {
+          driftBtn.setAttribute("aria-pressed", String(on));
+          driftBtn.textContent = on ? "Pause drift" : "Drift";
+        },
+      });
+    } catch (err) {
+      clearTimeout(watchdog);
+      fail(err instanceof Error ? err.message : "The reef scene failed to load.");
+    }
+
+    downloadBtn.addEventListener("click", () => {
+      if (downloadBtn.classList.contains("busy")) return;
+      downloadBtn.classList.add("busy");
+      try { handle?.capture?.(); } catch {}
+      const meters = (document.getElementById("depth").textContent || "000 m").replace(/\s+/g, "");
+      canvas.toBlob((blob) => {
+        downloadBtn.classList.remove("busy");
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `lucida-reef-${meters}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    });
+  </script>
+</body>
+</html>
